@@ -1,0 +1,9 @@
+src\__pycache__
+node_modules
+frontend\.next
+frontend\node_modules
+storage\chroma_db
+Qwen3-4B-Instruct-2507-Q5_K_S-4.74bpw.gguf
+package-lock.json
+package.json
+spec.md

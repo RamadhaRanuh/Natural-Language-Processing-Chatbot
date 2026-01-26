@@ -1,3 +1,11 @@
 llama-cpp-python
 llama-index
 llama-index-embeddings-huggingface
+llama-index-llms-llama-cpp
+llama-index-vector-stores-chroma
+gradio
+pypdf
+chromadb
+sentence-transformers
+fastapi
+uvicorn
