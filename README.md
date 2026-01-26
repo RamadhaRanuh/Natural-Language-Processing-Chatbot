@@ -1,54 +1,83 @@
-# Personal-Chatbot_LLM_RAG
+# Medical Retrieval Chatbot (OpenEvidence Style)
 
-### Download the Model: zephyr-7b-beta.Q5_K_M.gguf
-### From the following link: [https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGML/tree/main](https://huggingface.co/TheBloke/zephyr-7B-beta-GGUF)
+This project is a high-performance **Medical Retrieval Augmented Generation (RAG)** chatbot designed to answer complex medical questions using local trusted medical literature (e.g., *Gale Encyclopedia of Medicine*). 
 
----
-
-This project implements an AI chatbot using Large Language Models (LLM) and Retrieval Augmented Generation (RAG) techniques to provide detailed answers based on knowledge extracted from PDF documents.
+It features a modern, premium **client-server architecture**:
+- **Backend API**: Built with **FastAPI** & **LlamaIndex** for efficient retrieval and streaming response generation.
+- **Frontend UI**: Built with **Next.js**, **Tailwind CSS**, and **React Markdown** to mimic the "OpenEvidence" look and feel.
 
 ## Features
 
-- **LLM Integration**: Utilizes LlamaCPP for seamless integration with the LlamaCore C++ library, supporting both CPU and GPU acceleration for enhanced performance.
-  
-- **RAG Technique**: Implements Retrieval Augmented Generation to combine generative models with information retrieval from PDF documents, improving answer accuracy and relevance.
-  
-- **PDF Document Knowledge**: Uses llama_index for efficient handling and extraction of information from PDF documents, ensuring comprehensive responses.
+- **Local RAG Pipeline**: Uses `llama-index` and local vector stores (`ChromaDB`) to retrieve relevant context from indexed PDF documents.
+- **Streaming Responses**: Real-time token streaming for a responsive user experience.
+- **Premium UI**: 
+    - "OpenEvidence" inspired design with an orange theme.
+    - Markdown rendering for rich text answers.
+    - Responsive layout (Desktop Sidebar + Mobile Header).
+    - Floating input bar and clean typography.
+- **Local Inference**: Supports local GGUF models (e.g., Qwen, Zephyr) via `llama-cpp-python`.
+
+## Architecture
+
+- **Backend (`src/`)**: Python/FastAPI
+    - `src/api.py`: REST API endpoints (streaming chat).
+    - `src/rag.py`: RAG logic and query engine setup.
+    - `src/ingest.py`: Document ingestion script.
+- **Frontend (`frontend/`)**: TypeScript/Next.js
+    - `src/app/page.tsx`: Main chat interface.
+    - `src/app/globals.css`: Global styling (Tailwind).
 
 ## Requirements
 
-- Python 3.10.*
-- LlamaCPP (supports both CPU and GPU)
-- llama_index
-- Hugging Face Transformers (for LLM models)
+- **Python 3.10+**
+- **Node.js 18+** & **npm**
+- **Hardware**: Sufficient RAM/VRAM to run the local LLM (e.g., 8GB+ RAM).
 
 ## Installation
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/your_username/your_repo.git
-   cd your_repo
-   ```
+### 1. Backend Setup
 
-2. Install `llama-cpp-python` by following the instructions [here](https://github.com/abetlen/llama-cpp-python).
+1.  **Clone the repository** and navigate to the root directory.
+2.  **Install Python dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  **Download the Model**:
+    Ensure the GGUF model (e.g., `Qwen3-4B-Instruct-2507-Q5_K_S-4.74bpw.gguf`) is placed in the project root or configured in `src/config.py`.
+4.  **Ingest Data** (Run once to build index):
+    ```bash
+    python src/ingest.py
+    ```
 
-3. Install additional dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
+### 2. Frontend Setup
 
-4. Set up LlamaCPP and download necessary models following the provided instructions.
+1.  Navigate to the frontend directory:
+    ```bash
+    cd frontend
+    ```
+2.  **Install Node dependencies**:
+    ```bash
+    npm install
+    ```
 
 ## Usage
 
-1. Run the python script:
-   ```
-   python Main.py
-   ```
+You need to run both the backend and frontend servers simultaneously.
 
-2. Interact with the chatbot to ask questions related to PDF documents and observe its responses.
+### Terminal 1: Application Backend
+Start the FastAPI streaming server:
+```bash
+# From the project root
+python -m src.api
+```
+*Server running at http://localhost:8000*
 
-## Examples
+### Terminal 2: Application Frontend
+Start the Next.js development server:
+```bash
+# From the frontend/ directory
+npm run dev
+```
+*UI running at http://localhost:3000*
 
-- Query the chatbot with various questions about the content of PDF documents to test its knowledge retrieval capabilities.
-- Explore different configurations and parameters to optimize performance and response quality.
+Open your browser and navigate to **[http://localhost:3000](http://localhost:3000)** to start using the chatbot.
