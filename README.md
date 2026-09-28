@@ -1,6 +1,6 @@
 # Medical Retrieval Chatbot (OpenEvidence Style)
 
-This project is a high-performance **Medical Retrieval Augmented Generation (RAG)** chatbot designed to answer complex medical questions using local trusted medical literature (e.g., *Gale Encyclopedia of Medicine*). 
+This project is a high-performance **Medical Retrieval-Augmented Generation (RAG)** chatbot designed to answer complex medical questions using local trusted medical literature (e.g., *Gale Encyclopedia of Medicine*). 
 
 It features a modern, premium **client-server architecture**:
 - **Backend API**: Built with **FastAPI** & **LlamaIndex** for efficient retrieval and streaming response generation.
