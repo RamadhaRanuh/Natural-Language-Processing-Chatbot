@@ -1,39 +1,34 @@
-from llama_index.llms.llama_cpp import LlamaCPP
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.core import Settings
-from src.config import (
-    MODEL_PATH, 
-    CONTEXT_WINDOW, 
-    MAX_NEW_TOKENS, 
-    TEMPERATURE,
-    EMBEDDING_MODEL_NAME,
-    CHUNK_SIZE,
-    CHUNK_OVERLAP
-)
+"""Optional selector receives public topic/IDs only and cannot write clinical prose."""
+import json
+import httpx
+from .config import Config
 
-def init_settings():
-    """Initialize global settings for LlamaIndex."""
-    
-    # Initialize LLM
-    llm = LlamaCPP(
-        model_path=MODEL_PATH,
-        temperature=TEMPERATURE,
-        max_new_tokens=MAX_NEW_TOKENS,
-        context_window=CONTEXT_WINDOW,
-        generate_kwargs={},
-        model_kwargs={"n_gpu_layers": -1}, # Use all GPU layers if available
-        verbose=True
-    )
-    
-    # Initialize Embedding Model
-    embed_model = HuggingFaceEmbedding(model_name=EMBEDDING_MODEL_NAME)
-    
-    # Configure global settings
-    Settings.llm = llm
-    Settings.embed_model = embed_model
-    Settings.context_window = CONTEXT_WINDOW
-    Settings.num_output = MAX_NEW_TOKENS
-    Settings.chunk_size = CHUNK_SIZE
-    Settings.chunk_overlap = CHUNK_OVERLAP
-    
-    return llm, embed_model
+
+class SelectionError(ValueError):
+    pass
+
+
+async def select_claims(topic: str, candidates: list[str], config: Config, client: httpx.AsyncClient) -> list[str]:
+    if not config.model_url or not config.model_name or not config.model_key:
+        raise SelectionError("Optional selector is not configured.")
+    if not config.model_url.startswith("https://"):
+        raise SelectionError("Selector transport requires HTTPS.")
+    try:
+        response = await client.post(
+            config.model_url.rstrip("/") + "/chat/completions",
+            headers={"Authorization": "Bearer " + config.model_key},
+            json={"model": config.model_name, "temperature": 0, "messages": [
+                {"role": "system", "content": 'Select only supplied public evidence claim IDs. Return JSON {"claim_ids": [IDs]}. Do not generate text, numbers or citations.'},
+                {"role": "user", "content": json.dumps({"topic": topic, "candidate_ids": candidates})},
+            ]},
+        )
+        response.raise_for_status()
+        data = json.loads(response.json()["choices"][0]["message"]["content"])
+        chosen = data.get("claim_ids")
+        if set(data) != {"claim_ids"} or not isinstance(chosen, list) or not chosen or len(chosen) > 4:
+            raise SelectionError("Invalid selector schema.")
+        if any(not isinstance(item, str) or item not in candidates for item in chosen) or len(set(chosen)) != len(chosen):
+            raise SelectionError("Unknown or duplicate evidence ID.")
+        return chosen
+    except (httpx.HTTPError, ValueError, KeyError, TypeError, IndexError) as exc:
+        raise SelectionError("Selection failed; no medical output was published.") from exc

@@ -1,20 +1,33 @@
+from dataclasses import dataclass
 import os
+from pathlib import Path
 
-# Base paths
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "Dataset")
-STORAGE_DIR = os.path.join(BASE_DIR, "storage")
-MODEL_PATH = os.path.join(BASE_DIR, "Qwen3-4B-Instruct-2507-Q5_K_S-4.74bpw.gguf")
+ROOT = Path(__file__).resolve().parent.parent
 
-# Model Settings
-CONTEXT_WINDOW = 4096
-MAX_NEW_TOKENS = 512
-TEMPERATURE = 0.2
 
-# Embedding Model
-EMBEDDING_MODEL_NAME = "BAAI/bge-small-en-v1.5"
+@dataclass(frozen=True)
+class Config:
+    corpus_path: Path = ROOT / "data/evidence/pilot.json"
+    review_path: Path = ROOT / "data/evidence/review.json"
+    environment: str = "development"
+    provider_url: str = "https://www.ebi.ac.uk/europepmc/webservices/rest"
+    model_url: str | None = None
+    model_key: str | None = None
+    model_name: str = ""
+    status_max_age_seconds: int = 300
+    max_body_bytes: int = 32_768
 
-# RAG Settings
-SIMILARITY_TOP_K = 2
-CHUNK_SIZE = 512
-CHUNK_OVERLAP = 50
+    def __post_init__(self):
+        if self.environment not in {"development", "production"}:
+            raise ValueError("APP_ENV must be development or production.")
+
+    @classmethod
+    def from_env(cls) -> "Config":
+        return cls(
+            corpus_path=Path(os.getenv("EVIDENCE_CORPUS", str(ROOT / "data/evidence/pilot.json"))),
+            review_path=Path(os.getenv("CLINICAL_REVIEW", str(ROOT / "data/evidence/review.json"))),
+            environment=os.getenv("APP_ENV", "production"),
+            model_url=os.getenv("MODEL_BASE_URL") or None,
+            model_key=os.getenv("MODEL_API_KEY") or None,
+            model_name=os.getenv("MODEL_NAME", ""),
+        )

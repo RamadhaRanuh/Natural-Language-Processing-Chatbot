@@ -1,0 +1,15 @@
+.git
+.venv
+frontend
+ios
+Dataset
+Nodes
+storage
+__pycache__
+**/__pycache__
+*.ipynb
+.env
+*.log
+.scratch
+docs
+tests

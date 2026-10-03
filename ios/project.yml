@@ -1,0 +1,33 @@
+name: SehatEvidence
+options:
+  bundleIdPrefix: org.ramadha
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  SehatCore:
+    path: .
+targets:
+  SehatEvidence:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    dependencies:
+      - package: SehatCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.ramadha.SehatEvidence
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Sehat Evidence
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+      configs:
+        Debug:
+          INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking: YES
+schemes:
+  SehatEvidence:
+    build:
+      targets:
+        SehatEvidence: all

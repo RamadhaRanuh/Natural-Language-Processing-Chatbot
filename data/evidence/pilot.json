@@ -1,0 +1,305 @@
+{
+  "version": "2026-10-03",
+  "sources": [
+    {
+      "id": "st2ep",
+      "title": "Structured peer-led diabetes self-management and support in a low-income country: The ST2EP randomised controlled trial in Mali",
+      "authors": [
+        "Debussche X",
+        "Besançon S",
+        "Balcou-Debussche M",
+        "Ferdynus C",
+        "Delisle H",
+        "Huiart L",
+        "Sidibe AT"
+      ],
+      "year": 2018,
+      "doi": "10.1371/journal.pone.0191262",
+      "pmid": "29357380",
+      "pmcid": "PMC5777645",
+      "url": "https://doi.org/10.1371/journal.pone.0191262",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "license": "CC BY 4.0",
+      "document_hash": "3a5c1adceb27134ac4a4cdede6d2157471bdb60fe3d1233b123397efee5e790d",
+      "kind": "paper",
+      "population": "Adults in Bamako, Mali; HbA1c at least 8%.",
+      "design": "Open-label randomized education trial versus usual care.",
+      "limitations": [
+        "Single setting; extrapolation to Indonesia is untested.",
+        "HbA1c is a surrogate outcome; this trial did not test a chatbot.",
+        "Abstract intervention CI has a sign discrepancy; Table 2 supplies signed limits.",
+        "No medical or Indonesian-language reviewer has approved this fixture."
+      ],
+      "passages": [
+        {
+          "id": "st2ep-population",
+          "text": "We conducted an open-label randomised controlled trial. A total of 151 adults (76% women, mean age 52.5) with type 2 diabetes (HbA1c≥8%), treated in the diabetes consultation units of two secondary health centres in Bamako, were allocated to peer-led structured patient education (n = 76) or conventional care alone (n = 75).",
+          "locator": "./front/article-meta/abstract/sec[2]/p"
+        },
+        {
+          "id": "st2ep-results",
+          "text": "As shown in Table 2, the reduction in HbA1c levels between baseline and 12 months was higher (p = 0.006) in the intervention group (-1.05 [sd = 2.0]) than in the control group (-0.15 [sd = 1.7]). The effect size was 0.48 (CI95%: 0.14–0.81).",
+          "locator": "./body/sec[@id='sec016']/p[2]"
+        },
+        {
+          "id": "st2ep-table",
+          "text": "HbA1c, % | -1.05 (-1.54; -0.56) | -0.15 (-0.56; 0.26) | 0.006",
+          "locator": ".//table-wrap[@id='pone.0191262.t002']/table/tbody/tr[5]"
+        },
+        {
+          "id": "st2ep-denominators",
+          "text": " | Intervention group(n = 70) | Control group(n = 70) | p-value",
+          "locator": ".//table-wrap[@id='pone.0191262.t002']/table/thead/tr"
+        }
+      ],
+      "claims": [
+        {
+          "id": "st2ep-education-outcome",
+          "topic": "education",
+          "text_en": "the reduction in HbA1c levels between baseline and 12 months was higher",
+          "passage_id": "st2ep-results",
+          "text_id": null,
+          "data": [
+            {
+              "label": "Randomized sample",
+              "value": "151",
+              "unit": null,
+              "passage_id": "st2ep-population",
+              "locator": "./front/article-meta/abstract/sec[2]/p"
+            },
+            {
+              "label": "Primary endpoint",
+              "value": "12",
+              "unit": "months",
+              "passage_id": "st2ep-results",
+              "locator": "./body/sec[@id='sec016']/p[2]"
+            },
+            {
+              "label": "Intervention endpoint sample",
+              "value": "70",
+              "unit": null,
+              "passage_id": "st2ep-denominators",
+              "locator": ".//table-wrap[@id='pone.0191262.t002']/table/thead/tr"
+            },
+            {
+              "label": "Control endpoint sample",
+              "value": "70",
+              "unit": null,
+              "passage_id": "st2ep-denominators",
+              "locator": ".//table-wrap[@id='pone.0191262.t002']/table/thead/tr"
+            },
+            {
+              "label": "Intervention HbA1c change",
+              "value": "-1.05",
+              "unit": "%",
+              "passage_id": "st2ep-table",
+              "locator": ".//table-wrap[@id='pone.0191262.t002']/table/tbody/tr[5]"
+            },
+            {
+              "label": "Intervention change 95% CI",
+              "value": "-1.54; -0.56",
+              "unit": "%",
+              "passage_id": "st2ep-table",
+              "locator": ".//table-wrap[@id='pone.0191262.t002']/table/tbody/tr[5]"
+            },
+            {
+              "label": "Control HbA1c change",
+              "value": "-0.15",
+              "unit": "%",
+              "passage_id": "st2ep-table",
+              "locator": ".//table-wrap[@id='pone.0191262.t002']/table/tbody/tr[5]"
+            },
+            {
+              "label": "Control change 95% CI",
+              "value": "-0.56; 0.26",
+              "unit": "%",
+              "passage_id": "st2ep-table",
+              "locator": ".//table-wrap[@id='pone.0191262.t002']/table/tbody/tr[5]"
+            },
+            {
+              "label": "Cohen d",
+              "value": "0.48",
+              "unit": null,
+              "passage_id": "st2ep-results",
+              "locator": "./body/sec[@id='sec016']/p[2]"
+            },
+            {
+              "label": "Cohen d 95% CI",
+              "value": "0.14–0.81",
+              "unit": null,
+              "passage_id": "st2ep-results",
+              "locator": "./body/sec[@id='sec016']/p[2]"
+            }
+          ]
+        }
+      ],
+      "publication_status": {
+        "checked_on": "2026-10-03",
+        "metadata_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID%3A29357380+AND+SRC%3AMED&format=json&resultType=core",
+        "full_text_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC5777645/fullTextXML",
+        "first_publication_date": "2018-01-22",
+        "is_open_access": "Y",
+        "corrections": [],
+        "retraction_notice_found": false,
+        "candidate_status": "unreviewed",
+        "medical_review": null,
+        "indonesian_review": null,
+        "review_blockers": [
+          "Medical and bilingual reviews are pending.",
+          "Resolve abstract confidence-limit sign discrepancy against Table 2."
+        ]
+      },
+      "copyright_notice": "Copyright 2018 Debussche et al.",
+      "adaptation_notice": "Selected passages normalized from licensed XML; structured data extracted with units labeled. No author endorsement."
+    },
+    {
+      "id": "telescot",
+      "title": "Supported Telemonitoring and Glycemic Control in People with Type 2 Diabetes: The Telescot Diabetes Pragmatic Multicenter Randomized Controlled Trial",
+      "authors": [
+        "Wild SH",
+        "Hanley J",
+        "Lewis SC",
+        "McKnight JA",
+        "McCloughan LB",
+        "Padfield PL",
+        "Parker RA",
+        "Paterson M",
+        "Pinnock H",
+        "Sheikh A",
+        "McKinstry B"
+      ],
+      "year": 2016,
+      "doi": "10.1371/journal.pmed.1002098",
+      "pmid": "27458809",
+      "pmcid": "PMC4961438",
+      "url": "https://doi.org/10.1371/journal.pmed.1002098",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "license": "CC BY 4.0",
+      "document_hash": "c95c940287c2f98210fdb976e5eb99de58d0d66676487c7139ee7b16c8c78e5b",
+      "kind": "paper",
+      "population": "UK adults with poorly controlled type 2 diabetes.",
+      "design": "Randomized supported telemonitoring versus usual care.",
+      "limitations": [
+        "Clinician-supported intervention; this trial did not test an autonomous chatbot.",
+        "Representativeness and long-term persistence are uncertain.",
+        "Declared correction replaces adverse-events supplement; inspect corrected supplement before harm claims.",
+        "Table 5 and abstract/body report different p-values; p-values omitted pending review.",
+        "No medical or Indonesian-language reviewer has approved this fixture."
+      ],
+      "passages": [
+        {
+          "id": "telescot-population",
+          "text": "We performed a randomized, parallel, investigator-blind controlled trial with centralized randomization in family practices in four regions of the United Kingdom among 321 people with type 2 diabetes and glycated hemoglobin (HbA1c) >58 mmol/mol.",
+          "locator": "./front/article-meta/abstract/sec[2]/p"
+        },
+        {
+          "id": "telescot-followup",
+          "text": "HbA1c assessed at 9 mo was the primary outcome.",
+          "locator": "./front/article-meta/abstract/sec[2]/p"
+        },
+        {
+          "id": "telescot-denominators",
+          "text": "HbA1c data at follow-up were available for 146 people in the intervention group and 139 people in the control group.",
+          "locator": "./front/article-meta/abstract/sec[2]/p"
+        },
+        {
+          "id": "telescot-result",
+          "text": "adjusted mean HbA1c was 5.60 mmol/mol / 0.51% lower (95% CI 2.38 to 8.81 mmol/mol/ 95% CI 0.22% to 0.81%, p = 0·0007).",
+          "locator": "./front/article-meta/abstract/sec[2]/p"
+        },
+        {
+          "id": "telescot-conclusion",
+          "text": "Supported telemonitoring resulted in clinically important improvements in control of glycaemia in patients with type 2 diabetes in family practice.",
+          "locator": "./front/article-meta/abstract/sec[3]/p"
+        }
+      ],
+      "claims": [
+        {
+          "id": "telescot-monitoring-outcome",
+          "topic": "monitoring",
+          "text_en": "Supported telemonitoring resulted in clinically important improvements in control of glycaemia in patients with type 2 diabetes in family practice.",
+          "passage_id": "telescot-conclusion",
+          "text_id": null,
+          "data": [
+            {
+              "label": "Randomized sample",
+              "value": "321",
+              "unit": null,
+              "passage_id": "telescot-population",
+              "locator": "./front/article-meta/abstract/sec[2]/p"
+            },
+            {
+              "label": "Primary endpoint",
+              "value": "9",
+              "unit": "mo",
+              "passage_id": "telescot-followup",
+              "locator": "./front/article-meta/abstract/sec[2]/p"
+            },
+            {
+              "label": "Intervention endpoint sample",
+              "value": "146",
+              "unit": null,
+              "passage_id": "telescot-denominators",
+              "locator": "./front/article-meta/abstract/sec[2]/p"
+            },
+            {
+              "label": "Control endpoint sample",
+              "value": "139",
+              "unit": null,
+              "passage_id": "telescot-denominators",
+              "locator": "./front/article-meta/abstract/sec[2]/p"
+            },
+            {
+              "label": "Adjusted HbA1c lower in intervention",
+              "value": "5.60",
+              "unit": "mmol/mol",
+              "passage_id": "telescot-result",
+              "locator": "./front/article-meta/abstract/sec[2]/p"
+            },
+            {
+              "label": "Adjusted lower HbA1c 95% CI",
+              "value": "2.38 to 8.81",
+              "unit": "mmol/mol",
+              "passage_id": "telescot-result",
+              "locator": "./front/article-meta/abstract/sec[2]/p"
+            }
+          ]
+        }
+      ],
+      "publication_status": {
+        "checked_on": "2026-10-03",
+        "metadata_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID%3A27458809+AND+SRC%3AMED&format=json&resultType=core",
+        "full_text_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4961438/fullTextXML",
+        "first_publication_date": "2016-07-26",
+        "is_open_access": "Y",
+        "corrections": [
+          {
+            "source": "MED",
+            "id": "27760145",
+            "reference": "PLoS Med. 2016 Oct 19;13(10):e1002163. doi: 10.1371/journal.pmed.1002163.",
+            "type": "Erratum in",
+            "orderIn": 1
+          },
+          {
+            "source": "MED",
+            "id": "27927692",
+            "reference": "Evid Based Nurs. 2017 Jan;20(1):18. doi: 10.1136/eb-2016-102560.",
+            "type": "Comment in",
+            "orderIn": 2
+          }
+        ],
+        "retraction_notice_found": false,
+        "candidate_status": "unreviewed",
+        "medical_review": null,
+        "indonesian_review": null,
+        "review_blockers": [
+          "Medical and bilingual reviews are pending.",
+          "Inspect declared correction before any adverse-events claim.",
+          "Resolve primary-result p-value discrepancy before reporting p."
+        ]
+      },
+      "copyright_notice": "Copyright 2016 Wild et al.",
+      "adaptation_notice": "Selected passages normalized from licensed XML; structured data extracted with units labeled. No author endorsement."
+    }
+  ]
+}

@@ -1,104 +1,69 @@
-from fastapi import FastAPI, HTTPException
+"""No unrestricted generation or streaming routes remain."""
+from contextlib import asynccontextmanager
+import asyncio
+import os
+import httpx
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional
-from fastapi.responses import StreamingResponse
-import json
+from fastapi.responses import JSONResponse
+from .config import Config
+from .contracts import ChatRequest, ChatAnswer
+from .evidence import EvidenceRepository
+from .service import ChatService
 
-from src.rag import get_query_engine
 
-app = FastAPI(title="Medical Retrieval Chatbot API")
+def create_app(config: Config | None = None, transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
+    settings = config or Config.from_env()
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], # Allow all origins for dev
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    @asynccontextmanager
+    async def lifespan(app):
+        async with httpx.AsyncClient(timeout=15, transport=transport, follow_redirects=False) as client:
+            repository = EvidenceRepository(settings, client)
+            app.state.repository = repository
+            app.state.service = ChatService(settings, repository, client)
+            yield
 
-class Message(BaseModel):
-    role: str
-    content: str
+    app = FastAPI(title="Sehat Evidence", version="0.1.0", lifespan=lifespan)
+    origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",") if x.strip()]
+    app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
 
-class ChatRequest(BaseModel):
-    messages: List[Message]
+    @app.middleware("http")
+    async def privacy_limits(request: Request, call_next):
+        if request.method == "POST":
+            total, pieces = 0, []
+            async for chunk in request.stream():
+                total += len(chunk)
+                if total > settings.max_body_bytes:
+                    return JSONResponse({"detail": "Request too large."}, status_code=413)
+                pieces.append(chunk)
+            request._body = b"".join(pieces)
+        response = await call_next(request)
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
 
-# Initialize engine lazily
-query_engine = None
-def get_engine():
-    global query_engine
-    if query_engine is None:
-        query_engine = get_query_engine()
-    return query_engine
+    @app.get("/health")
+    async def health(request: Request):
+        repo = request.app.state.repository
+        return {
+            "status": "ok", "environment": settings.environment, "corpus_version": repo.corpus.version,
+            "sources": len(repo.corpus.sources),
+            "clinical_release_ready": bool(repo.corpus.sources) and all(repo.approved(s) for s in repo.corpus.sources) and repo.safety_approved(),
+            "safety_reviewed": repo.safety_approved(),
+            "model_configured": bool(settings.model_url and settings.model_key and settings.model_name),
+        }
 
-@app.get("/health")
-async def health_check():
-    return {"status": "ok"}
+    @app.post("/v1/chat", response_model=ChatAnswer)
+    async def chat(request: Request, body: ChatRequest):
+        try:
+            async with asyncio.timeout(35):
+                return await request.app.state.service.answer(body)
+        except TimeoutError:
+            from uuid import uuid4
+            from .service import TEXT
+            return ChatAnswer(id=str(uuid4()), status="insufficient_evidence", language=body.language, message=TEXT[body.language]["missing"])
 
-@app.post("/chat")
-async def chat_endpoint(request: ChatRequest):
-    """
-    Chat endpoint that returns a streaming response.
-    """
-    try:
-        # Get the last user message
-        user_message = request.messages[-1].content
-        
-        engine = get_engine()
-        streaming_response = engine.query(user_message)
-        
-        async def event_generator():
-            # 1. Yield sources first (as a special event or just text? 
-            # Ideally structured, but for simple text stream let's prepend sources or yield distinct chunks)
-            # For this 'simple' custom implementation, we'll stream text. 
-            # If we want sources, we might want to send a JSON structure per line.
-            
-            # Let's send sources as a JSON object in the first chunk, or appended at end?
-            # Standard pattern: Text stream. Sources usually come with the retrieval.
-            
-            sources_list = []
-            if streaming_response.source_nodes:
-                for i, node in enumerate(streaming_response.source_nodes):
-                    metadata = node.metadata
-                    sources_list.append({
-                        "id": i+1,
-                        "file_name": metadata.get('file_name', 'Unknown File'),
-                        "page_label": metadata.get('page_label', '?'),
-                        "snippet": node.node.get_content()[:200]
-                    })
-            
-            # Yield sources as a special JSON line (optional)
-            # For now, let's just allow the client to handle it. 
-            # But wait, Vercel AI SDK expects text delta. 
-            # We can use custom data protocol. 
-            # Let's stick to simple text stream for the answer, and maybe append formatted sources at the end?
-            # Or better: Standard SSE.
-            
-            # Send citations header
-            if sources_list:
-                citations_str = "\n\n**Sources:**\n"
-                for s in sources_list:
-                    citations_str += f"{s['id']}. *{s['file_name']}* (Page {s['page_label']})\n"
-                # We yield this at the END or BEGINNING? Users prefer answer first.
-                pass 
-                
-            # Stream the response text
-            for text in streaming_response.response_gen:
-                yield text
+    return app
 
-            # Append sources at the end
-            if sources_list:
-                yield "\n\n**Sources:**\n"
-                for s in sources_list:
-                     yield f"{s['id']}. *{s['file_name']}* (Page {s['page_label']})\n> {s['snippet']}...\n\n"
 
-        return StreamingResponse(event_generator(), media_type="text/plain")
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("src.api:app", host="0.0.0.0", port=8000, reload=True)
+app = create_app()

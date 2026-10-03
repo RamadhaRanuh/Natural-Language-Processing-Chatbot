@@ -1,0 +1,13 @@
+import { chromium } from "@playwright/test";
+import console from "node:console";
+import process from "node:process";
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+const errors = [];
+page.on("pageerror", (error) => errors.push(error.message));
+page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+await page.goto("http://127.0.0.1:3000");
+await page.waitForTimeout(1000);
+console.log(JSON.stringify({ errors, overflow: await page.evaluate(() => window.document.documentElement.scrollWidth > window.innerWidth) }));
+await browser.close();
+if (errors.length) process.exitCode = 1;

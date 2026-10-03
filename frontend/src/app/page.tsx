@@ -1,256 +1,207 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Send, Menu, Search, User, Bot, FileText, Activity, ShieldCheck, ChevronRight, Sparkles, BookOpen } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import type { Answer, Claim, Language, Source } from "@/lib/contracts";
 
-interface Message {
-  role: "user" | "assistant";
-  content: string;
+const copy = {
+  en: {
+    brand: "sehat", evidence: "evidence", about: "Adult diabetes · Research pilot",
+    visit: "Prepare for a visit", reset: "New conversation", eyebrow: "UNDERSTANDING STARTS WITH EVIDENCE",
+    headline: "A little clarity.\nA better conversation.",
+    intro: "Explore diabetes research, see where each finding comes from, and bring better questions to your doctor.",
+    age: "I am 18 or older, and the patient is 18 or older.",
+    hint: "Your conversation stays in this session. No account or health-record connection.",
+    ask: "Ask about adult type 2 diabetes research…", send: "Ask", loading: "Finding studies and checking their sources…",
+    suggestions: ["What did diabetes education studies find?", "What does telemonitoring research show?", "What evidence is there about lifestyle?"],
+    labels: ["Education & support", "Monitoring research", "Lifestyle evidence"],
+    inspect: "Inspect evidence", source: "Source excerpt", study: "The study behind this finding",
+    data: "Reported study data", population: "Population", design: "Study design", limitations: "What this study cannot tell us",
+    original: "Original passage", dataOriginal: "Data provenance", checked: "Source checked", read: "Read original paper",
+    close: "Close", safety: "Official help information", error: "The evidence service is unavailable. Your question has not been answered. Please try again.",
+    preview: "Development pilot · Not clinically validated", empty: "Every finding has a source you can inspect.",
+    scope: "Education and visit preparation. Personal diagnosis, treatment changes, pediatric and pregnancy advice are outside this pilot.",
+    visitTitle: "Your words, ready for your doctor",
+    visitIntro: "Record what you want to discuss. This summary organizes your entries; it does not infer a diagnosis.",
+    fields: ["Symptoms I want to discuss", "When they started / timing", "My concerns", "Current prescribed medicines (as reported)", "Questions for my doctor"],
+    reviewed: "I have reviewed and corrected this summary.",
+    copy: "Copy reviewed summary", copied: "Copied", clipboardError: "Clipboard unavailable. Select and copy the preview below.",
+    patient: "Patient-reported visit summary", unavailable: "Not reported", translate: "Original English — reviewed Indonesian translation unavailable",
+    question: "Questions to bring to your clinician",
+  },
+  id: {
+    brand: "sehat", evidence: "evidence", about: "Diabetes dewasa · Pilot penelitian",
+    visit: "Siapkan kunjungan", reset: "Percakapan baru", eyebrow: "MEMAHAMI DIMULAI DARI BUKTI",
+    headline: "Lebih jelas.\nLebih siap berdiskusi.",
+    intro: "Jelajahi penelitian diabetes, lihat sumber setiap temuan, dan siapkan pertanyaan untuk dokter.",
+    age: "Saya dan pasien yang dibahas berusia 18 tahun atau lebih.",
+    hint: "Percakapan hanya ada dalam sesi ini. Tanpa akun atau koneksi rekam medis.",
+    ask: "Tanyakan penelitian diabetes tipe 2 dewasa…", send: "Tanya", loading: "Mencari penelitian dan memeriksa sumber…",
+    suggestions: ["Apa hasil penelitian edukasi diabetes?", "Apa hasil penelitian pemantauan diabetes?", "Apa bukti tentang gaya hidup?"],
+    labels: ["Edukasi & dukungan", "Penelitian pemantauan", "Bukti gaya hidup"],
+    inspect: "Lihat bukti", source: "Kutipan sumber", study: "Penelitian di balik temuan ini",
+    data: "Data yang dilaporkan", population: "Populasi", design: "Desain penelitian", limitations: "Batasan penelitian ini",
+    original: "Kutipan asli", dataOriginal: "Asal data", checked: "Sumber diperiksa", read: "Baca penelitian asli",
+    close: "Tutup", safety: "Informasi bantuan resmi", error: "Layanan bukti tidak tersedia. Pertanyaan Anda belum dijawab. Silakan coba lagi.",
+    preview: "Pilot pengembangan · Belum divalidasi klinis", empty: "Setiap temuan memiliki sumber yang dapat Anda periksa.",
+    scope: "Edukasi dan persiapan kunjungan. Diagnosis pribadi, perubahan pengobatan, serta saran anak dan kehamilan di luar cakupan pilot.",
+    visitTitle: "Cerita Anda, siap untuk dokter",
+    visitIntro: "Catat yang ingin Anda diskusikan. Ringkasan ini menyusun masukan Anda, tanpa menyimpulkan diagnosis.",
+    fields: ["Gejala yang ingin saya diskusikan", "Waktu mulai / pola waktu", "Kekhawatiran saya", "Obat yang diresepkan saat ini (sesuai laporan)", "Pertanyaan untuk dokter"],
+    reviewed: "Saya sudah meninjau dan mengoreksi ringkasan ini.",
+    copy: "Salin ringkasan yang ditinjau", copied: "Disalin", clipboardError: "Papan klip tidak tersedia. Pilih dan salin pratinjau di bawah.",
+    patient: "Ringkasan kunjungan sesuai laporan pasien", unavailable: "Tidak dilaporkan", translate: "Bahasa Inggris asli — terjemahan Indonesia yang ditinjau belum tersedia",
+    question: "Pertanyaan untuk dokter",
+  },
+};
+
+type Entry = { question: string; answer?: Answer; error?: boolean };
+
+function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const element = dialog.current;
+    element?.showModal();
+    return () => element?.close();
+  }, []);
+  return <dialog ref={dialog} className="sheet" aria-label={title} onCancel={onClose}>
+    <div className="sheet-head"><h2>{title}</h2><button onClick={onClose} aria-label="Close / Tutup" className="icon-button">×</button></div>
+    <div className="sheet-body">{children}</div>
+  </dialog>;
 }
 
 export default function Home() {
+  const [language, setLanguage] = useState<Language>("en");
+  const t = copy[language];
+  const [adult, setAdult] = useState(false);
   const [query, setQuery] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [selected, setSelected] = useState<{ claim: Claim; source: Source } | null>(null);
+  const [visit, setVisit] = useState(false);
+  const [fields, setFields] = useState(["", "", "", "", ""]);
+  const [reviewed, setReviewed] = useState(false);
+  const [clipboard, setClipboard] = useState("");
+  const abort = useRef<AbortController | null>(null);
+  const end = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  useEffect(() => { document.documentElement.lang = language; }, [language]);
+  useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, [entries, busy]);
+  useEffect(() => () => abort.current?.abort(), []);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const summary = t.patient + "\n\n" + fields.map((value, i) => t.fields[i] + ":\n" + (value || t.unavailable)).join("\n\n");
 
-  // Auto-focus input on load
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const handleSubmit = async (e?: React.FormEvent, customQuery?: string) => {
-    e?.preventDefault();
-    const text = customQuery || query;
-    if (!text.trim() || isLoading) return;
-
-    // Add user message
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
-    setQuery("");
-    setIsLoading(true);
-
+  async function submit(text: string) {
+    if (!adult || busy || !text.trim()) return;
+    const clean = text.trim().slice(0, 4000);
+    const index = entries.length;
+    const history = entries.filter((entry) => entry.answer && !entry.error).slice(-4).flatMap((entry) => [
+      { role: "user", content: entry.question }, { role: "assistant", content: entry.answer!.message },
+    ]);
+    const messages = [...history, { role: "user", content: clean }];
+    // Match the API's combined 12k-character budget even after long prior turns.
+    while (messages.length > 1 && messages.reduce((n, message) => n + message.content.length, 0) > 12000) messages.splice(0, 2);
+    setEntries((old) => [...old, { question: clean }]);
+    setQuery(""); setBusy(true);
+    const controller = new AbortController();
+    abort.current = controller;
     try {
-      // Create a placeholder for the assistant message
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
-      const response = await fetch("http://localhost:8000/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [{ role: "user", content: text }],
-        }),
+      const response = await fetch("/api/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages, language, adult_user: adult, adult_patient: adult }),
+        signal: controller.signal,
       });
-
-      if (!response.body) return;
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
-      let assistantMessage = "";
-
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
-        const chunkValue = decoder.decode(value, { stream: true });
-        assistantMessage += chunkValue;
-
-        // Update the last message (assistant)
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1] = {
-            role: "assistant",
-            content: assistantMessage,
-          };
-          return newMessages;
-        });
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "Error: Failed to fetch response. Please ensure the backend server is running." },
-      ]);
+      if (!response.ok) throw new Error("Unavailable");
+      const answer = await response.json() as Answer;
+      setEntries((old) => old.map((entry, i) => i === index ? { ...entry, answer } : entry));
+    } catch {
+      if (!controller.signal.aborted) setEntries((old) => old.map((entry, i) => i === index ? { ...entry, error: true } : entry));
     } finally {
-      setIsLoading(false);
+      if (abort.current === controller) { setBusy(false); abort.current = null; }
     }
-  };
+  }
 
-  const suggestions = [
-    { text: "What is the normal blood pressure range?", icon: <Activity className="w-5 h-5 text-orange-600" />, label: "Quick Fact" },
-    { text: "Does aspirin interact with ibuprofen?", icon: <ShieldCheck className="w-5 h-5 text-orange-600" />, label: "Interaction Check" },
-    { text: "Guidelines for treating Type 2 Diabetes?", icon: <BookOpen className="w-5 h-5 text-orange-600" />, label: "Clinical Guidelines" },
-  ];
+  function reset() {
+    abort.current?.abort(); abort.current = null;
+    setEntries([]); setQuery(""); setBusy(false); setSelected(null); setVisit(false);
+    setFields(["", "", "", "", ""]); setReviewed(false); setClipboard("");
+  }
 
-  return (
-    <div className="flex h-screen bg-[#F9FAFB] text-gray-900 font-sans antialiased overflow-hidden">
-      {/* Sidebar - Desktop */}
-      <aside className="w-[280px] border-r border-gray-100 bg-white hidden md:flex flex-col shadow-[2px_0_24px_rgba(0,0,0,0.02)] z-10">
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-orange-200">OE</div>
-          <span className="font-bold text-xl tracking-tight text-gray-900">OpenEvidence</span>
-        </div>
+  async function copySummary() {
+    try { await navigator.clipboard.writeText(summary); setClipboard(t.copied); }
+    catch { setClipboard(t.clipboardError); }
+  }
 
-        <div className="flex-1 px-4 py-2 space-y-6 overflow-y-auto">
-          <div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 mb-3">Library</div>
-            <div className="space-y-1">
-              <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-orange-600 bg-orange-50/80 rounded-lg transition-colors">
-                <Sparkles className="w-4 h-4" />
-                New Conversation
-              </button>
-              <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                <FileText className="w-4 h-4 text-gray-400" />
-                My Sources
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 mb-3">Recent</div>
-            <div className="space-y-1">
-              <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors truncate">
-                <span>Recent queries...</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 border-t border-gray-100">
-          <button className="flex items-center gap-3 w-full p-2 hover:bg-gray-50 rounded-lg transition-colors">
-            <div className="w-8 h-8 rounded-full bg-gray-200 border border-white shadow-sm flex items-center justify-center text-gray-500">
-              <User className="w-4 h-4" />
-            </div>
-            <div className="text-left">
-              <div className="text-sm font-medium text-gray-900">Medical Professional</div>
-              <div className="text-xs text-gray-500">Free Plan</div>
-            </div>
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full relative">
-        {/* Mobile Header */}
-        <header className="h-16 border-b border-gray-100 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 md:hidden sticky top-0 z-20">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">OE</div>
-            <span className="font-bold text-lg text-gray-900">OpenEvidence</span>
-          </div>
-          <Menu className="w-5 h-5 text-gray-500" />
-        </header>
-
-        {/* Chat Area */}
-        <div className="flex-1 overflow-y-auto scroll-smooth">
-          {messages.length === 0 ? (
-            <div className="min-h-full flex flex-col items-center justify-center p-6 md:p-12 pb-32">
-              <div className="text-center space-y-6 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-6 text-orange-600">
-                  <Sparkles className="w-8 h-8" />
-                </div>
-                <h1 className="text-4xl md:text-5xl font-serif font-medium text-gray-900 tracking-tight">
-                  Evidence-based answers<br />at the point of care.
-                </h1>
-                <p className="text-lg text-gray-500 font-light max-w-lg mx-auto">
-                  Ask complex medical questions and get answers grounded in trusted peer-reviewed literature.
-                </p>
-              </div>
-
-              {/* Suggestions */}
-              <div className="mt-12 w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-4">
-                {suggestions.map((s, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSubmit(undefined, s.text)}
-                    disabled={isLoading}
-                    className="group flex flex-col items-start gap-3 p-5 bg-white border border-gray-200/60 rounded-2xl hover:border-orange-200 hover:shadow-lg hover:shadow-orange-500/5 transition-all text-left"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-colors">
-                      {s.icon}
-                    </div>
-                    <div>
-                      <div className="text-xs font-semibold text-orange-600 uppercase tracking-wide mb-1">{s.label}</div>
-                      <div className="text-sm font-medium text-gray-900 group-hover:text-orange-900">{s.text}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="max-w-4xl mx-auto py-8 md:py-12 px-4 space-y-10 pb-32">
-              {messages.map((msg, i) => (
-                <div key={i} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  {msg.role === 'user' ? (
-                    <div className="flex justify-end mb-8">
-                      <div className="bg-gray-100 text-gray-900 px-6 py-4 rounded-3xl rounded-tr-sm max-w-[85%] md:max-w-2xl text-lg leading-relaxed shadow-sm">
-                        {msg.content}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex gap-4 md:gap-6">
-                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex-shrink-0 flex items-center justify-center text-white shadow-md mt-1">
-                        <Bot className="w-5 h-5 md:w-6 md:h-6" />
-                      </div>
-                      <div className="flex-1 min-w-0 space-y-2">
-                        <div className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                          OpenEvidence AI
-                          {isLoading && i === messages.length - 1 && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 animate-pulse">
-                              Thinking...
-                            </span>
-                          )}
-                        </div>
-                        <div className="prose prose-lg prose-gray max-w-none prose-p:leading-relaxed prose-headings:font-serif prose-headings:font-medium prose-a:text-orange-600 hover:prose-a:text-orange-700">
-                          <ReactMarkdown>{msg.content}</ReactMarkdown>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-              <div ref={messagesEndRef} className="h-4" />
-            </div>
-          )}
-        </div>
-
-        {/* Floating Input Area */}
-        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-white via-white/80 to-transparent pt-10 pb-6 md:pb-8 px-4 z-20">
-          <div className="max-w-3xl mx-auto shadow-2xl shadow-gray-200/50 rounded-[2rem] bg-white ring-1 ring-gray-100 relative group overflow-hidden">
-            <div className="absolute inset-0 bg-orange-50 opacity-0 group-focus-within:opacity-10 transition-opacity pointer-events-none" />
-            <form onSubmit={handleSubmit} className="flex items-end gap-2 p-2 pl-6">
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ask a medical question..."
-                className="flex-1 py-4 bg-transparent border-none focus:ring-0 focus:outline-none text-lg text-gray-900 placeholder:text-gray-400 min-h-[60px]"
-                disabled={isLoading}
-              />
-              <button
-                type="submit"
-                disabled={!query.trim() || isLoading}
-                className="w-12 h-12 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105 active:scale-95 mb-1 mr-1"
-              >
-                <Send className="w-5 h-5 ml-0.5" />
-              </button>
-            </form>
-          </div>
-          <p className="text-center mt-3 text-xs text-gray-400 font-medium tracking-wide">
-            AI generated content can be inaccurate. Always verify with primary sources.
-          </p>
-        </div>
-      </main>
-    </div>
-  );
+  return <div className="app">
+    <header className="topbar">
+      <Link href="/" className="wordmark" aria-label="Sehat Evidence"><span className="mark">✳</span>sehat<span className="wordmark-light">evidence</span></Link>
+      <nav aria-label="Main">
+        <div className="language" aria-label="Language"><button aria-pressed={language === "en"} onClick={() => setLanguage("en")}>EN</button><button aria-pressed={language === "id"} onClick={() => setLanguage("id")}>ID</button></div>
+        <button className="visit-button" onClick={() => setVisit(true)}>{t.visit}<span aria-hidden="true">↗</span></button>
+      </nav>
+    </header>
+    <main>
+      <div className="context-row"><span className="context-pill"><span className="dot" />{t.about}</span><button className="text-button" onClick={reset}>＋ {t.reset}</button></div>
+      {!entries.length && <section className="hero">
+        <div className="hero-symbol" aria-hidden="true">✳</div>
+        <p className="eyebrow">{t.eyebrow}</p><h1>{t.headline}</h1><p className="intro">{t.intro}</p>
+        <div className="trust-line"><span aria-hidden="true">◈</span>{t.empty}</div>
+        <div className="suggestions">{t.suggestions.map((suggestion, i) => <button key={suggestion} disabled={!adult || busy} onClick={() => submit(suggestion)}>
+          <span className="suggestion-label">{String(i + 1).padStart(2, "0")} / {t.labels[i]}</span><span>{suggestion}</span><span className="arrow" aria-hidden="true">↗</span>
+        </button>)}</div>
+      </section>}
+      <section className="conversation" aria-live="polite" aria-label={language === "en" ? "Conversation" : "Percakapan"}>
+        {entries.map((entry, i) => <article key={i} className="turn">
+          <p className="user-question">{entry.question}</p>
+          {entry.error ? <div className="notice error" role="alert">{t.error}</div> : entry.answer && <div className="answer">
+            <div className="answer-heading"><span className="mark small">✳</span><strong>Sehat Evidence</strong><span className="status-tag">{entry.answer.status.replaceAll("_", " ")}</span></div>
+            <p>{entry.answer.message}</p>
+            {entry.answer.claims.map((claim) => {
+              const source = entry.answer!.sources.find((s) => s.id === claim.source_id);
+              return source && <div className="finding" key={claim.id}>
+                <p className="finding-label">{t.source} · {source.year}</p>
+                <blockquote lang={claim.display_language}>{claim.text}</blockquote>
+                {language === "id" && claim.display_language === "en" && <small>{t.translate}</small>}
+                <button className="evidence-button" onClick={() => setSelected({ claim, source })}><span>↳ {t.inspect}</span><span>{source.authors[0] || source.pmid} · {claim.data.length} {language === "en" ? "data fields" : "kolom data"} ↗</span></button>
+              </div>;
+            })}
+            {entry.answer.notices.map((notice) => <p className="notice" key={notice}>{notice}</p>)}
+            {!!entry.answer.questions.length && <div className="doctor-questions"><h3>{t.question}</h3>{entry.answer.questions.map((question) => <p key={question}>{question}</p>)}</div>}
+            {entry.answer.safety_url && <a className="external-link" href={entry.answer.safety_url} target="_blank" rel="noreferrer">{t.safety} ↗</a>}
+          </div>}
+        </article>)}
+        {busy && <p className="loading" role="status"><span className="pulse" />{t.loading}</p>}
+        <div ref={end} />
+      </section>
+      <section className="composer" aria-label={language === "en" ? "Ask a question" : "Ajukan pertanyaan"}>
+        <label className="adult"><input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} />{t.age}</label>
+        <form onSubmit={(event) => { event.preventDefault(); submit(query); }} className="input-shell">
+          <textarea aria-label={t.ask} placeholder={t.ask} value={query} maxLength={4000} rows={2} onChange={(e) => setQuery(e.target.value)} disabled={busy}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(query); } }} />
+          <button disabled={!adult || busy || !query.trim()} type="submit">{t.send} <span aria-hidden="true">↑</span></button>
+        </form>
+        <p className="session-hint">{t.hint}</p>
+      </section>
+      <footer><span>{t.preview}</span><p>{t.scope}</p><a href="https://kemkes.go.id/" target="_blank" rel="noreferrer">{t.safety} ↗</a></footer>
+    </main>
+    {selected && <Sheet title={t.study} onClose={() => setSelected(null)}>
+      <div className="source-meta">{selected.source.design} · {selected.source.year}</div><h3 className="paper-title">{selected.source.title}</h3>
+      <p>{selected.source.authors.join(", ")}</p><dl className="study-context"><dt>{t.population}</dt><dd>{selected.source.population}</dd><dt>{t.design}</dt><dd>{selected.source.design}</dd></dl>
+      <h3>{t.data}</h3><table><thead><tr><th>{language === "en" ? "Measure" : "Ukuran"}</th><th>{language === "en" ? "Reported value" : "Nilai sumber"}</th></tr></thead><tbody>{selected.claim.data.map((datum) => <tr key={datum.label}><td>{datum.label}</td><td>{datum.value} {datum.unit}</td></tr>)}</tbody></table>
+      <h3>{t.original}</h3><blockquote className="source-passage">{selected.claim.passage.text}</blockquote><code className="locator">{selected.claim.passage.locator}</code>
+      <details><summary>{t.dataOriginal}</summary>{selected.claim.data_passages.map((passage) => <div key={passage.id}><blockquote className="source-passage">{passage.text}</blockquote><code className="locator">{passage.locator}</code></div>)}</details>
+      <h3>{t.limitations}</h3><ul>{selected.source.limitations.map((limit) => <li key={limit}>{limit}</li>)}</ul>
+      <p className="source-meta">{t.checked}: {new Date(selected.source.checked_at).toLocaleString(language === "id" ? "id-ID" : "en-GB")}</p>
+      <p className="source-meta">DOI {selected.source.doi} · PMID {selected.source.pmid} · {selected.source.license}</p>
+      <p className="source-meta">{selected.source.copyright_notice}<br />{selected.source.adaptation_notice}</p>
+      <a className="primary-link" href={selected.source.url} target="_blank" rel="noreferrer">{t.read} ↗</a>
+    </Sheet>}
+    {visit && <Sheet title={t.visitTitle} onClose={() => setVisit(false)}>
+      <p>{t.visitIntro}</p>
+      {fields.map((value, i) => <label className="visit-field" key={i}>{t.fields[i]}<textarea value={value} maxLength={2000} rows={2} onChange={(event) => { setFields((old) => old.map((x, j) => j === i ? event.target.value : x)); setReviewed(false); setClipboard(""); }} /></label>)}
+      <label className="adult"><input type="checkbox" checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} />{t.reviewed}</label>
+      <button className="primary-link" disabled={!reviewed} onClick={copySummary}>{t.copy}</button>
+      {clipboard && <p role="status">{clipboard}</p>}<details><summary>{language === "en" ? "Preview summary" : "Pratinjau ringkasan"}</summary><pre className="summary-preview">{summary}</pre></details>
+    </Sheet>}
+  </div>;
 }
